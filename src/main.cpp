@@ -1,6 +1,11 @@
 #include <Arduino.h>
 #include <NewPing.h>
 
+// PARAMETROS DE REFERÊNCIA
+static int MAX_NEAR = 10;
+static int MAX_FAR = 20;
+static int MAX_SIGN = 40;
+
 // RODAS DIREITA
 int RD1 = 4; //RODA IN1
 int RD2 = 5; //RODA IN2
@@ -11,20 +16,20 @@ int RE2 = 7; //RODA IN4
 // SENSOR SONAR DIREITA
 int echoD = 9;
 int trigD = 8;
-NewPing sonarD(trigD, echoD, 70);
+NewPing sonarD(trigD, echoD, MAX_SIGN);
 // SENSOR SONAR ESQUERDA
 int echoE = 11;
 int trigE = 10;
-NewPing sonarE(trigE, echoE, 70);
+NewPing sonarE(trigE, echoE, MAX_SIGN);
+// SENSOR SONAR CENTRAL
+int echoC = 13;
+int trigC = 12;
+NewPing sonarC(trigC, echoC, MAX_SIGN);
 
-int MAX_NEAR = 10;
-int MAX_FAR = 20;
-int MAX_LEFT = 3;
-int MAX_RIGTH = -3;
-
+// VARIAVEIS DE MONITORAMENTO
 int direita;
 int esquerda;
-int diferencaDireitaEsquerda;
+int centro;
 
 //FUNÇÕES DE MOVIMENTO
 void stop(); // PARA
@@ -38,13 +43,18 @@ void getPosicao(); //ATUALIZA DISTACIAS DOS SENSORES DIREITA E ESQUERDA
 //FUNÇOES DE MEDIR DISTANCIA 
 void distanciaD(){
   direita = sonarD.ping_cm();
-  delay(50);
+  delay(40);
   // sonarD.timer_stop();
 }
 void distanciaE(){
   esquerda = sonarE.ping_cm();
-  delay(50);
+  delay(40);
   // sonarE.timer_stop();
+}
+void distanciaC(){
+  centro = sonarC.ping_cm();
+  delay(40);
+  // sonarC.timer_stop();
 }
 
 void setup() {
@@ -64,20 +74,22 @@ void loop() {
 void getPosicao(){
   distanciaD();
   distanciaE();
-  diferencaDireitaEsquerda = direita - esquerda;
-
+  distanciaC();
 }
 void corrigePosicao(){
-  if(direita < MAX_NEAR && esquerda < MAX_NEAR){
-    back();
+  if(centro == 0){
+    // objeto fora de alcance
   }
-  else if(direita > MAX_FAR && esquerda > MAX_FAR){
+  else if(centro < MAX_NEAR){
+    back(); 
+  }
+  else if(centro > MAX_FAR){
     atack();
   }
-  else if (diferencaDireitaEsquerda > MAX_LEFT) {
+  else if (direita > centro ) {
     left();
   }
-  else if(diferencaDireitaEsquerda < MAX_RIGTH){
+  else if(esquerda > centro ){
     right();
   }
   else{
