@@ -4,7 +4,9 @@
 // PARAMETROS DE REFERÊNCIA
 static int MAX_NEAR = 10;
 static int MAX_FAR = 20;
-static int MAX_SIGN = 40;
+static int MAX_SIGN = 200;
+static int TimeDelay = 250;
+static int MODULO = 1;
 
 // RODAS DIREITA
 int RD1 = 4; //RODA IN1
@@ -17,112 +19,178 @@ int RE2 = 7; //RODA IN4
 int echoD = 9;
 int trigD = 8;
 NewPing sonarD(trigD, echoD, MAX_SIGN);
-// SENSOR SONAR ESQUERDA
+// SENSOR SONAR ESQUE.RDA
 int echoE = 11;
 int trigE = 10;
 NewPing sonarE(trigE, echoE, MAX_SIGN);
-// SENSOR SONAR CENTRAL
-int echoC = 13;
-int trigC = 12;
-NewPing sonarC(trigC, echoC, MAX_SIGN);
+// // SENSOR SONAR CENTRAL
+// int echoC = 13;
+// int trigC = 12;
+// NewPing sonarC(trigC, echoC, MAX_SIGN);
 
 // VARIAVEIS DE MONITORAMENTO
 int direita;
 int esquerda;
-int centro;
 
 //FUNÇÕES DE MOVIMENTO
-void stop(); // PARA
-void atack(); // ANDA PARA FRENTE
-void back(); // ANDA PARA TRÁS
-void right(); // GIRA À DIRETA DENTRO DO PROPRIO EIXO
-void left(); // GIRA À ESQUERDA DENTRO DO PROPRIO EIXO
-void corrigePosicao(); // CORRIGE POSIÇÃO 
-void getPosicao(); //ATUALIZA DISTACIAS DOS SENSORES DIREITA E ESQUERDA
+void stop();           // PARA
+void atack();          // ANDA PARA FRENTE
+void back();           // ANDA PARA TRÁS
+void right();          // GIRA À DIRETA DENTRO DO PROPRIO EIXO
+void left();           // GIRA À ESQUERDA DENTRO DO PROPRIO EIXO
+void corrigePosicao(); // CORRIGE POSIÇÃO
+void getPosicao();     //ATUALIZA DISTACIAS DOS SENSORES DIREITA E ESQUERDA
+int modular(int, int mod = 2);
+void printDistance(int); // FUNÇAO PAR TESTE de logica
 
-//FUNÇOES DE MEDIR DISTANCIA 
-void distanciaD(){
-  direita = sonarD.ping_cm();
-  delay(40);
-  // sonarD.timer_stop();
+//FUNÇOES DE MEDIR DISTANCIA
+void distanciaD()
+{
+  direita = sonarD.convert_cm(sonarD.ping_median());
+  if (direita > MAX_FAR + 10)
+    direita = MAX_FAR;
+  if (direita < MAX_NEAR - (MAX_NEAR/2))
+    direita = MAX_NEAR + (MAX_NEAR/2);
+  direita = modular(direita, MODULO);
 }
-void distanciaE(){
-  esquerda = sonarE.ping_cm();
-  delay(40);
-  // sonarE.timer_stop();
-}
-void distanciaC(){
-  centro = sonarC.ping_cm();
-  delay(40);
-  // sonarC.timer_stop();
+void distanciaE()
+{
+  esquerda = sonarE.convert_cm(sonarE.ping_median());
+  if (esquerda > MAX_FAR + 10)
+    esquerda = MAX_FAR;
+  if (direita < MAX_NEAR - (MAX_NEAR/2))
+    direita = MAX_NEAR + (MAX_NEAR/2);
+  esquerda = modular(esquerda, MODULO);
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(9600);
   pinMode(RD1, OUTPUT);
   pinMode(RD2, OUTPUT);
   pinMode(RE1, OUTPUT);
   pinMode(RE2, OUTPUT);
-
 }
 
-void loop() {
+void loop()
+{
   getPosicao();
   corrigePosicao();
 }
 
-void getPosicao(){
+void getPosicao()
+{
   distanciaD();
   distanciaE();
-  distanciaC();
 }
-void corrigePosicao(){
-  if(centro == 0){
+void corrigePosicao()
+{
+  if (direita == 0 && esquerda == 0)
+  {
     // objeto fora de alcance
-  }
-  else if(centro < MAX_NEAR){
-    back(); 
-  }
-  else if(centro > MAX_FAR){
-    atack();
-  }
-  else if (direita > centro ) {
-    left();
-  }
-  else if(esquerda > centro ){
-    right();
-  }
-  else{
+    Serial.println("");
     stop();
   }
+  else if (esquerda < MAX_NEAR && direita < MAX_NEAR)
+  {
+    back();
+    printDistance(2);
+  }
+  else if (esquerda > MAX_FAR && direita > MAX_FAR)
+  {
+    atack();
+    printDistance(8);
+  }
+  else if (direita > esquerda && (direita - esquerda) > 2)
+  {
+    left();
+    printDistance(4);
+  }
+  else if (esquerda > direita && (esquerda - direita) > 2)
+  {
+    right();
+    printDistance(6);
+  }
+  else
+  {
+    stop();
+    printDistance(5);
+  }
 }
-void stop(){
+void stop()
+{
   digitalWrite(RD1, HIGH);
   digitalWrite(RD2, HIGH);
   digitalWrite(RE1, HIGH);
   digitalWrite(RE2, HIGH);
 }
-void atack(){
+void atack()
+{
   digitalWrite(RD2, HIGH);
   digitalWrite(RD1, LOW);
   digitalWrite(RE2, HIGH);
   digitalWrite(RE1, LOW);
 }
-void back(){
+void back()
+{
   digitalWrite(RD1, HIGH);
   digitalWrite(RD2, LOW);
   digitalWrite(RE1, HIGH);
   digitalWrite(RE2, LOW);
 }
-void right(){
+void right()
+{
   digitalWrite(RD1, HIGH);
   digitalWrite(RD2, LOW);
   digitalWrite(RE1, LOW);
   digitalWrite(RE2, HIGH);
 }
-void left(){
+void left()
+{
   digitalWrite(RD2, HIGH);
   digitalWrite(RD1, LOW);
   digitalWrite(RE2, LOW);
   digitalWrite(RE1, HIGH);
+}
+int modular(int direcao, int mod)
+{
+  return direcao - (direcao % mod);
+}
+void printDistance(int direcao)
+{
+  if (direcao == 6)
+  {
+    Serial.println("            RIGHT");
+    Serial.print(esquerda);
+    Serial.print(" ---------------- ");
+    Serial.println(direita);
+  }
+  else if (direcao == 4)
+  {
+    Serial.println("LEFT              ");
+    Serial.print(esquerda);
+    Serial.print(" ---------------- ");
+    Serial.println(direita);
+  }
+  else if (direcao == 2)
+  {
+    Serial.println("       BACK       ");
+    Serial.print(esquerda);
+    Serial.print(" ---------------- ");
+    Serial.println(direita);
+  }
+  else if (direcao == 8)
+  {
+    Serial.println("       ATACK      ");
+    Serial.print(esquerda);
+    Serial.print(" ---------------- ");
+    Serial.println(direita);
+  }
+  else if (direcao == 5)
+  {
+    Serial.println("       STOP      ");
+    Serial.print(esquerda);
+    Serial.print(" ---------------- ");
+    Serial.println(direita);
+  }
 }
