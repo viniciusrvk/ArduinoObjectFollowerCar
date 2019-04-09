@@ -1,9 +1,12 @@
 #include <Arduino.h>
 #include <NewPing.h>
 
+//LED
+int led = 13;
+
 // PARAMETROS DE REFERÊNCIA
-static int MAX_NEAR = 10;
-static int MAX_FAR = 20;
+static int MAX_NEAR = 20;
+static int MAX_FAR = 35;
 static int MAX_SIGN = 200;
 static int TimeDelay = 250;
 static int MODULO = 1;
@@ -46,7 +49,7 @@ void printDistance(int); // FUNÇAO PAR TESTE de logica
 //FUNÇOES DE MEDIR DISTANCIA
 void distanciaD()
 {
-  direita = sonarD.convert_cm(sonarD.ping_median());
+  direita = sonarD.convert_cm(sonarD.ping_median(2));
   if (direita > MAX_FAR + 10)
     direita = MAX_FAR;
   if (direita < MAX_NEAR - (MAX_NEAR/2))
@@ -55,10 +58,10 @@ void distanciaD()
 }
 void distanciaE()
 {
-  esquerda = sonarE.convert_cm(sonarE.ping_median());
+  esquerda = sonarE.convert_cm(sonarE.ping_median(2));
   if (esquerda > MAX_FAR + 10)
     esquerda = MAX_FAR;
-  if (direita < MAX_NEAR - (MAX_NEAR/2))
+  if (esquerda < MAX_NEAR - (MAX_NEAR/2))
     direita = MAX_NEAR + (MAX_NEAR/2);
   esquerda = modular(esquerda, MODULO);
 }
@@ -70,6 +73,7 @@ void setup()
   pinMode(RD2, OUTPUT);
   pinMode(RE1, OUTPUT);
   pinMode(RE2, OUTPUT);
+  pinMode(led, OUTPUT);
 }
 
 void loop()
@@ -123,6 +127,8 @@ void stop()
   digitalWrite(RD2, HIGH);
   digitalWrite(RE1, HIGH);
   digitalWrite(RE2, HIGH);
+  digitalWrite(led, HIGH);
+
 }
 void atack()
 {
@@ -130,6 +136,7 @@ void atack()
   digitalWrite(RD1, LOW);
   digitalWrite(RE2, HIGH);
   digitalWrite(RE1, LOW);
+  digitalWrite(led, LOW);
 }
 void back()
 {
@@ -137,6 +144,7 @@ void back()
   digitalWrite(RD2, LOW);
   digitalWrite(RE1, HIGH);
   digitalWrite(RE2, LOW);
+  digitalWrite(led, LOW);
 }
 void right()
 {
@@ -144,6 +152,7 @@ void right()
   digitalWrite(RD2, LOW);
   digitalWrite(RE1, LOW);
   digitalWrite(RE2, HIGH);
+  digitalWrite(led, LOW);
 }
 void left()
 {
@@ -151,6 +160,7 @@ void left()
   digitalWrite(RD1, LOW);
   digitalWrite(RE2, LOW);
   digitalWrite(RE1, HIGH);
+  digitalWrite(led, LOW);
 }
 int modular(int direcao, int mod)
 {
